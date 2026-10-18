@@ -2,14 +2,18 @@
 #include <iostream>
 
 #include "Args.h"
+#include "Model.h"
 
 int main(int argc, char* argv[]) {
     try {
         Options options = parse_args(argc, argv);
 
-        // Temporary: show the parsed options until the model is in place.
-        std::cout << "n = " << options.n << ", file = " << options.filename
-                  << ", length = " << options.length << ", alpha = " << options.alpha << '\n';
+        Model model(options.n, options.alpha);
+        model.train_from_file(options.filename);
+
+        // Temporary: show some statistics until text generation is in place.
+        std::cout << "distinct " << options.n << "-grams: " << model.gram_counts().size()
+                  << ", alphabet size: " << model.alphabet().size() << '\n';
     } catch (const std::exception& e) {
         std::cerr << "slm: " << e.what() << '\n';
         return 1;
