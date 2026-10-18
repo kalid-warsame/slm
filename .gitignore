@@ -1,0 +1,11 @@
+# Build output
+build/
+*.o
+*.d
+slm
+test_model
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
