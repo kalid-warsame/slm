@@ -1,4 +1,4 @@
-// Unit tests for Model, based on the examples in the lab text.
+// Unit tests for Model and Generator, based on the examples in the lab text.
 // Build and run with: make test
 
 #include <cmath>
@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <string>
 
+#include "../src/Generator.h"
 #include "../src/Model.h"
 
 namespace {
@@ -69,12 +70,32 @@ void pseudocounts() {
     check(m.next_weights("zz").size() == 3, "alpha=1: unseen n-gram has weights");
 }
 
+void generation() {
+    Model m(2);
+    m.train("ababac");
+    for (unsigned seed = 0; seed < 50; ++seed) {
+        Generator g(m, seed);
+        std::string out = g.generate(10);
+        check(out.size() >= 2 && out.size() <= 10, "output length within bounds");
+        check(m.frequency(out.substr(0, 2)) > 0, "starts with an n-gram from the text");
+    }
+
+    Model smooth(3, 0.5);
+    smooth.train("Hubba bubba");
+    Generator g(smooth, 1);
+    check(g.generate(100).size() == 100, "with alpha > 0 the full length is produced");
+}
+
 void errors() {
     check_throws<std::invalid_argument>([] { Model m(0); }, "n = 0");
     check_throws<std::invalid_argument>([] { Model m(2, -1.0); }, "negative alpha");
     check_throws<std::runtime_error>([] { Model m(3); m.train("abc"); }, "too short text");
     check_throws<std::runtime_error>([] { Model m(2); m.train_from_file("no_such_file.txt"); },
                                      "missing file");
+    Model m(2);
+    m.train("ababac");
+    Generator g(m, 0);
+    check_throws<std::invalid_argument>([&] { g.generate(1); }, "length < n");
 }
 
 }  // namespace
@@ -83,6 +104,7 @@ int main() {
     example1();
     example2();
     pseudocounts();
+    generation();
     errors();
     if (failures == 0) {
         std::cout << "All tests passed.\n";
