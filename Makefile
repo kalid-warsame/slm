@@ -6,8 +6,9 @@ BUILD_DIR = build
 
 SRCS = $(wildcard $(SRC_DIR)/*.cpp)
 OBJS = $(SRCS:$(SRC_DIR)/%.cpp=$(BUILD_DIR)/%.o)
+LIB_OBJS = $(filter-out $(BUILD_DIR)/main.o, $(OBJS))
 
-.PHONY: all clean
+.PHONY: all clean test
 
 all: slm
 
@@ -20,7 +21,13 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp | $(BUILD_DIR)
 $(BUILD_DIR):
 	mkdir -p $@
 
+test: test_model
+	./test_model
+
+test_model: tests/test_model.cpp $(LIB_OBJS)
+	$(CXX) $(CXXFLAGS) -o $@ $^
+
 clean:
-	rm -rf $(BUILD_DIR) slm
+	rm -rf $(BUILD_DIR) slm test_model
 
 -include $(OBJS:.o=.d)

@@ -8,7 +8,10 @@
 
 // A character-level n-gram language model.
 //
-// Training records how often each n-gram occurs in a text.
+// Training records how often each n-gram occurs in a text and which
+// characters follow it. From those counts the model gives n-gram
+// frequencies and the conditional distribution P(c | w) of the next
+// character c after an n-gram w, optionally smoothed with a pseudocount.
 class Model {
 public:
     // n: n-gram length (> 0). alpha: pseudocount (>= 0).
@@ -37,12 +40,27 @@ public:
     // Relative frequency of an n-gram among all n-grams in the text.
     double frequency(const std::string& gram) const;
 
+    // Estimated P(c | gram) = (N(gram, c) + alpha) / (N(gram) + alpha * |A|).
+    // Returns 0 if c is not in the alphabet or if the distribution is
+    // undefined (alpha == 0 and gram is never followed by a character).
+    double probability(const std::string& gram, char c) const;
+
+    // Unnormalised sampling weights N(gram, c) + alpha for the character
+    // after gram, one per character in alphabet() and in the same order.
+    // Empty if gram has no successor distribution (alpha == 0 and gram is
+    // never followed by a character in the training text).
+    std::vector<double> next_weights(const std::string& gram) const;
+
 private:
     std::size_t n_;
     double alpha_;
     std::size_t total_grams_ = 0;
     std::vector<char> alphabet_;
     std::map<std::string, std::size_t> gram_counts_;
+    // transitions_[w][c] = N(w, c)
+    std::map<std::string, std::map<char, std::size_t>> transitions_;
+    // follow_counts_[w] = N(w) = sum over c of N(w, c)
+    std::map<std::string, std::size_t> follow_counts_;
 };
 
 #endif
